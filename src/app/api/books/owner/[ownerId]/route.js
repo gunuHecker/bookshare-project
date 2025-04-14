@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getBooks, getUsers } from "../../../../utils";
+import { getBooks, getUsers } from "@/app/api/utils";
 
 // Get books by owner ID with simpler implementation
 export async function GET(request, context) {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getBooks, saveBooks, getUsers } from "../../../../utils";
+import { getBooks, saveBooks, getUsers } from "@/app/api/utils";
 
 // Update book status
 export async function PATCH(request, { params }) {

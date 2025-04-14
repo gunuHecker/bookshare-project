@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getUsers, saveUsers } from "../../../utils";
+import { getUsers, saveUsers } from "@/app/api/utils";
 
 // Get user profile
 export async function GET(request, { params }) {

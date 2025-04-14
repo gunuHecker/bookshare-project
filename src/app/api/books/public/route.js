@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getBooks, getUsers } from "../../../utils";
+import { getBooks, getUsers } from "@/app/api/utils";
 
 // Get public books (no authentication required)
 export async function GET() {

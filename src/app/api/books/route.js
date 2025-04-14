@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getBooks, saveBooks, getUsers } from "../utils";
+import { getBooks, saveBooks, getUsers } from "@/app/api/utils";
 
 // Get all books
 export async function GET(request) {
