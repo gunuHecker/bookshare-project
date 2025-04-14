@@ -1,0 +1,110 @@
+[
+  {
+    "id": "1",
+    "title": "The Great Gatsby",
+    "author": "F. Scott Fitzgerald",
+    "genre": "Classic Literature",
+    "location": "New York",
+    "contactInfo": "1234567890",
+    "ownerId": "1",
+    "status": "available",
+    "createdAt": "2023-06-01T09:30:00.000Z",
+    "updatedAt": "2023-06-01T09:30:00.000Z"
+  },
+  {
+    "id": "2",
+    "title": "To Kill a Mockingbird",
+    "author": "Harper Lee",
+    "genre": "Fiction",
+    "location": "Chicago",
+    "contactInfo": "1234567890",
+    "ownerId": "1",
+    "status": "rented",
+    "createdAt": "2023-06-02T14:45:00.000Z",
+    "updatedAt": "2023-06-10T11:20:00.000Z"
+  },
+  {
+    "id": "3",
+    "title": "1984",
+    "author": "George Orwell",
+    "genre": "Dystopian",
+    "location": "Boston",
+    "contactInfo": "1234567890",
+    "ownerId": "1",
+    "status": "available",
+    "createdAt": "2023-06-05T16:15:00.000Z",
+    "updatedAt": "2023-06-05T16:15:00.000Z"
+  },
+  {
+    "id": "4",
+    "title": "The Hobbit",
+    "author": "J.R.R. Tolkien",
+    "genre": "Fantasy",
+    "location": "Chicago",
+    "contactInfo": "owner@example.com",
+    "ownerId": "1",
+    "status": "available",
+    "createdAt": "2023-06-07T10:00:00.000Z",
+    "updatedAt": "2023-06-07T10:00:00.000Z"
+  },
+  {
+    "id": "1744413475432",
+    "title": "book1",
+    "author": "auth1",
+    "genre": "Uncategorized",
+    "location": "rrk",
+    "contactInfo": "1235465478",
+    "ownerId": "1744413286726",
+    "status": "available",
+    "createdAt": "2025-04-11T23:17:55.432Z",
+    "updatedAt": "2025-04-12T14:40:50.927Z"
+  },
+  {
+    "id": "1744414944385",
+    "title": "book3",
+    "author": "auth3",
+    "genre": "Uncategorized",
+    "location": "mdk",
+    "contactInfo": "23425324523",
+    "ownerId": "1744413286726",
+    "status": "available",
+    "createdAt": "2025-04-11T23:42:24.385Z",
+    "updatedAt": "2025-04-12T10:09:43.139Z"
+  },
+  {
+    "id": "1744463271371",
+    "title": "kong",
+    "author": "rudrap",
+    "genre": "Uncategorized",
+    "location": "Bikaner",
+    "contactInfo": "23452345",
+    "ownerId": "1744462538441",
+    "status": "rented",
+    "createdAt": "2025-04-12T13:07:51.371Z",
+    "updatedAt": "2025-04-12T14:12:44.331Z"
+  },
+  {
+    "id": "1744466653920",
+    "title": "godzilla",
+    "author": "mik",
+    "genre": "Fiction",
+    "location": "Bikaner",
+    "contactInfo": "23452345",
+    "ownerId": "1744462538441",
+    "status": "available",
+    "createdAt": "2025-04-12T14:04:13.920Z",
+    "updatedAt": "2025-04-12T14:04:13.920Z"
+  },
+  {
+    "id": "1744492198958",
+    "title": "Spider man",
+    "author": "me",
+    "genre": "Fiction",
+    "location": "Bikaner",
+    "contactInfo": "9025969078",
+    "ownerId": "1744491980092",
+    "status": "exchanged",
+    "createdAt": "2025-04-12T21:09:58.958Z",
+    "updatedAt": "2025-04-12T21:10:27.223Z"
+  }
+]

@@ -1,0 +1,88 @@
+[
+  {
+    "id": "1",
+    "name": "John Doe",
+    "mobile": "1234567890",
+    "email": "owner@example.com",
+    "password": "password123",
+    "role": "owner",
+    "createdAt": "2023-05-15T10:00:00.000Z"
+  },
+  {
+    "id": "2",
+    "name": "Jane Smith",
+    "mobile": "9876543210",
+    "email": "seeker@example.com",
+    "password": "password123",
+    "role": "seeker",
+    "createdAt": "2023-05-16T11:30:00.000Z"
+  },
+  {
+    "id": "1744413286726",
+    "name": "One",
+    "mobile": "1234567892",
+    "email": "one@gmail.com",
+    "password": "pass1234",
+    "role": "owner",
+    "createdAt": "2025-04-11T23:14:46.726Z",
+    "updatedAt": "2025-04-12T10:14:12.827Z"
+  },
+  {
+    "id": "1744413597729",
+    "name": "Two Pratap",
+    "mobile": "1234567891",
+    "email": "twop@gmail.com",
+    "password": "pass1234",
+    "role": "seeker",
+    "createdAt": "2025-04-11T23:19:57.729Z",
+    "updatedAt": "2025-04-11T23:43:08.873Z"
+  },
+  {
+    "id": "1744452928491",
+    "name": "four",
+    "mobile": "1234562",
+    "email": "four@gmail.com",
+    "password": "pass1234",
+    "role": "seeker",
+    "createdAt": "2025-04-12T10:15:28.491Z",
+    "updatedAt": "2025-04-12T14:38:17.399Z"
+  },
+  {
+    "id": "1744455069007",
+    "name": "five",
+    "mobile": "25325325",
+    "email": "five@gmail.com",
+    "password": "pass1234",
+    "role": "owner",
+    "createdAt": "2025-04-12T10:51:09.007Z"
+  },
+  {
+    "id": "1744462538441",
+    "name": "six",
+    "mobile": "124134545",
+    "email": "six@gmail.com",
+    "password": "pass1234",
+    "role": "owner",
+    "createdAt": "2025-04-12T12:55:38.441Z"
+  },
+  {
+    "id": "1744491980092",
+    "name": "Tom",
+    "mobile": "1234567890",
+    "email": "tom@gmail.com",
+    "password": "pass1234",
+    "role": "owner",
+    "createdAt": "2025-04-12T21:06:20.092Z",
+    "updatedAt": "2025-04-12T21:07:53.314Z"
+  },
+  {
+    "id": "1744492545996",
+    "name": "seek",
+    "mobile": "123412345",
+    "email": "seek@gmail.com",
+    "password": "pass1234",
+    "role": "seeker",
+    "createdAt": "2025-04-12T21:15:45.996Z",
+    "updatedAt": "2025-04-12T21:18:15.849Z"
+  }
+]
