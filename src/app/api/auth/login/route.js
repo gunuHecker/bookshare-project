@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-import { getUsers } from "@/app/api/utils";
+import connectToDatabase from "@/dbConfig/dbConfig";
+import User from "@/models/User";
+import bcrypt from "bcryptjs";
 
 export async function POST(request) {
   try {
+    // Connect to the database
+    await connectToDatabase();
+
     const body = await request.json();
     const { email, password } = body;
 
@@ -14,12 +19,8 @@ export async function POST(request) {
       );
     }
 
-    const users = getUsers();
-
-    // Find user by email and password
-    const user = users.find(
-      (user) => user.email === email && user.password === password
-    );
+    // Find user by email
+    const user = await User.findOne({ email }).lean();
 
     if (!user) {
       return NextResponse.json(
@@ -28,13 +29,30 @@ export async function POST(request) {
       );
     }
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    // Compare passwords
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { message: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
+
+    // Remove password from response and format ID
+    const userResponse = {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile,
+      role: user.role,
+      createdAt: user.createdAt,
+    };
 
     return NextResponse.json(
       {
         message: "Login successful",
-        user: userWithoutPassword,
+        user: userResponse,
       },
       { status: 200 }
     );

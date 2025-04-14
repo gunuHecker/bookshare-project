@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-import { getUsers, saveUsers } from "@/app/api/utils";
+import connectToDatabase from "@/dbConfig/dbConfig";
+import User from "@/models/User";
+import bcrypt from "bcryptjs";
 
 export async function POST(request) {
   try {
+    // Connect to the database
+    await connectToDatabase();
+
     const body = await request.json();
     const { name, mobile, email, password, role } = body;
 
@@ -22,37 +27,45 @@ export async function POST(request) {
       );
     }
 
-    const users = getUsers();
-
     // Check if email already exists
-    if (users.some((user) => user.email === email)) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return NextResponse.json(
         { message: "Email already registered" },
         { status: 400 }
       );
     }
 
+    // Hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     // Create new user
-    const newUser = {
-      id: Date.now().toString(),
+    const newUser = new User({
       name,
       mobile,
       email,
-      password, // In a real app, this would be hashed
+      password: hashedPassword,
       role,
-      createdAt: new Date().toISOString(),
-    };
+    });
 
-    users.push(newUser);
-    saveUsers(users);
+    // Save the user to the database
+    await newUser.save();
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = newUser;
+    const userResponse = {
+      id: newUser._id,
+      name: newUser.name,
+      mobile: newUser.mobile,
+      email: newUser.email,
+      role: newUser.role,
+      createdAt: newUser.createdAt,
+    };
 
     return NextResponse.json(
       {
         message: "User registered successfully",
-        user: userWithoutPassword,
+        user: userResponse,
       },
       { status: 201 }
     );

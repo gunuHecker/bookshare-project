@@ -12,23 +12,35 @@ export default function SeekerDashboard() {
     searchTerm: "",
     location: "",
     genre: "",
-    status: "available",
+    status: "all",
   });
 
   useEffect(() => {
-    // In a real app, this would fetch from the API
+    // Fetch all books without status filter
     const fetchBooks = async () => {
       try {
         setIsLoading(true);
+        setError("");
 
-        // Use the Next.js API route
+        console.log("Fetching books from API...");
+
+        // Use the Next.js API route without status filter
         const response = await fetch("/api/books");
 
         if (!response.ok) {
-          throw new Error("Failed to fetch books");
+          const errorData = await response.json();
+          console.error("API error response:", errorData);
+          throw new Error(errorData.message || "Failed to fetch books");
         }
 
         const data = await response.json();
+        console.log(`Fetched ${data.length} books from API`);
+
+        // Log the first book to check its structure
+        if (data.length > 0) {
+          console.log("Sample book:", data[0]);
+        }
+
         setBooks(data);
         setFilteredBooks(data);
       } catch (err) {
@@ -46,11 +58,9 @@ export default function SeekerDashboard() {
   useEffect(() => {
     let result = [...books];
 
-    // Filter by status
-    if (filters.status) {
-      result = result.filter(
-        (book) => filters.status === "all" || book.status === filters.status
-      );
+    // Filter by status (only if not "all")
+    if (filters.status && filters.status !== "all") {
+      result = result.filter((book) => book.status === filters.status);
     }
 
     // Filter by location
@@ -93,9 +103,22 @@ export default function SeekerDashboard() {
       searchTerm: "",
       location: "",
       genre: "",
-      status: "available",
+      status: "all",
     });
   };
+
+  // Get counts by status for displaying stats
+  const getStatusCounts = () => {
+    const counts = {
+      all: books.length,
+      available: books.filter((book) => book.status === "available").length,
+      rented: books.filter((book) => book.status === "rented").length,
+      exchanged: books.filter((book) => book.status === "exchanged").length,
+    };
+    return counts;
+  };
+
+  const statusCounts = getStatusCounts();
 
   if (isLoading) {
     return (
@@ -108,9 +131,7 @@ export default function SeekerDashboard() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Browse Available Books
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Browse Books</h1>
         <p className="text-gray-600">
           Discover books shared by our community members and connect with
           owners.
@@ -144,7 +165,7 @@ export default function SeekerDashboard() {
           {(filters.searchTerm ||
             filters.location ||
             filters.genre ||
-            filters.status !== "available") && (
+            filters.status !== "all") && (
             <button
               onClick={clearFilters}
               className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center font-medium"
@@ -285,7 +306,7 @@ export default function SeekerDashboard() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                 />
               </svg>
               <label
@@ -302,17 +323,13 @@ export default function SeekerDashboard() {
               onChange={handleFilterChange}
               className="w-full rounded-md border border-gray-300 shadow-sm py-2 px-3 bg-white text-gray-900 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             >
-              <option value="all" className="text-gray-900">
-                All Status
+              <option value="all">All Books ({statusCounts.all})</option>
+              <option value="available">
+                Available ({statusCounts.available})
               </option>
-              <option value="available" className="text-gray-900">
-                Available
-              </option>
-              <option value="rented" className="text-gray-900">
-                Rented
-              </option>
-              <option value="exchanged" className="text-gray-900">
-                Exchanged
+              <option value="rented">Rented ({statusCounts.rented})</option>
+              <option value="exchanged">
+                Exchanged ({statusCounts.exchanged})
               </option>
             </select>
           </div>
@@ -336,27 +353,26 @@ export default function SeekerDashboard() {
       </div>
 
       {filteredBooks.length === 0 ? (
-        <div className="bg-gray-50 rounded-lg p-8 text-center border border-gray-200">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
-            <svg
-              className="w-8 h-8 text-indigo-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200">
+          <svg
+            className="w-16 h-16 text-gray-400 mx-auto mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.5"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            />
+          </svg>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
             No matching books found
           </h3>
-          <p className="text-gray-600 mb-4">
-            Try adjusting your filters or check back later for new listings.
+          <p className="text-gray-500 mb-6 max-w-md mx-auto">
+            Try adjusting your search filters or check back later as our
+            community members are always adding new books.
           </p>
           <button
             onClick={clearFilters}
@@ -368,7 +384,7 @@ export default function SeekerDashboard() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBooks.map((book) => (
-            <BookCard key={book.id} book={book} isOwner={false} />
+            <BookCard key={book.id} book={book} />
           ))}
         </div>
       )}

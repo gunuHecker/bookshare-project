@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
-import { getBooks, saveBooks, getUsers } from "@/app/api/utils";
+import connectToDatabase from "@/dbConfig/dbConfig";
+import Book from "@/models/Book";
+import User from "@/models/User";
+import mongoose from "mongoose";
 
 // Get all books
 export async function GET(request) {
   try {
+    // Connect to the database
+    await connectToDatabase();
+
     const { searchParams } = new URL(request.url);
     const title = searchParams.get("title");
     const author = searchParams.get("author");
@@ -11,62 +17,93 @@ export async function GET(request) {
     const location = searchParams.get("location");
     const status = searchParams.get("status");
 
-    let books = getBooks();
+    console.log(`Fetching books with filters: ${JSON.stringify({
+      title, author, genre, location, status
+    })}`);
 
-    // Apply filters if provided
-    if (title) {
-      books = books.filter((book) =>
-        book.title.toLowerCase().includes(title.toLowerCase())
-      );
+    // Try direct database access first as a fallback
+    let books = [];
+    
+    try {
+      // Build the query filter
+      const filter = {};
+
+      if (title) {
+        filter.title = { $regex: title, $options: "i" }; // Case-insensitive search
+      }
+
+      if (author) {
+        filter.author = { $regex: author, $options: "i" };
+      }
+
+      if (genre) {
+        filter.genre = { $regex: genre, $options: "i" };
+      }
+
+      if (location) {
+        filter.location = { $regex: location, $options: "i" };
+      }
+
+      // Only apply status filter if it's specified and not "all"
+      if (status && status !== "all") {
+        filter.status = status;
+      }
+
+      // Try to use the Mongoose model first
+      books = await Book.find(filter).lean();
+      console.log(`Found ${books.length} books using Mongoose model`);
+    } catch (err) {
+      console.error("Error using Mongoose model:", err);
+      
+      // Fallback to direct MongoDB access
+      try {
+        const db = mongoose.connection.db;
+        const bookCollection = db.collection('books');
+        
+        // Build MongoDB filter
+        const filter = {};
+        
+        if (title) {
+          filter.title = { $regex: title, $options: "i" };
+        }
+
+        if (author) {
+          filter.author = { $regex: author, $options: "i" };
+        }
+
+        if (genre) {
+          filter.genre = { $regex: genre, $options: "i" };
+        }
+
+        if (location) {
+          filter.location = { $regex: location, $options: "i" };
+        }
+
+        if (status && status !== "all") {
+          filter.status = status;
+        }
+        
+        books = await bookCollection.find(filter).toArray();
+        console.log(`Found ${books.length} books using direct MongoDB access`);
+      } catch (mongoErr) {
+        console.error("Error accessing MongoDB directly:", mongoErr);
+        throw mongoErr;
+      }
     }
 
-    if (author) {
-      books = books.filter((book) =>
-        book.author.toLowerCase().includes(author.toLowerCase())
-      );
-    }
+    // Format the response with consistent ID field
+    const formattedBooks = books.map(book => ({
+      ...book,
+      id: book._id.toString(),
+    }));
 
-    if (genre) {
-      books = books.filter(
-        (book) =>
-          book.genre && book.genre.toLowerCase().includes(genre.toLowerCase())
-      );
-    }
+    console.log(`Returning ${formattedBooks.length} books`);
 
-    if (location) {
-      books = books.filter((book) =>
-        book.location.toLowerCase().includes(location.toLowerCase())
-      );
-    }
-
-    if (status) {
-      books =
-        status === "all"
-          ? books
-          : books.filter((book) => book.status === status);
-    } else {
-      // Default to showing only available books
-      books = books.filter((book) => book.status === "available");
-    }
-
-    // Get all users to include owner details with books
-    const users = getUsers();
-
-    // Map books with owner details
-    const booksWithOwnerDetails = books.map((book) => {
-      const owner = users.find((user) => user.id === book.ownerId);
-      return {
-        ...book,
-        ownerName: owner ? owner.name : "Unknown",
-        contactInfo: owner ? owner.mobile || owner.email : "N/A",
-      };
-    });
-
-    return NextResponse.json(booksWithOwnerDetails, { status: 200 });
+    return NextResponse.json(formattedBooks, { status: 200 });
   } catch (error) {
     console.error("Get books error:", error);
     return NextResponse.json(
-      { message: "Server error while getting books" },
+      { message: `Server error while getting books: ${error.message}` },
       { status: 500 }
     );
   }
@@ -75,8 +112,12 @@ export async function GET(request) {
 // Create a new book listing
 export async function POST(request) {
   try {
+    // Connect to the database
+    await connectToDatabase();
+
     const body = await request.json();
-    const { title, author, genre, location, contactInfo, ownerId } = body;
+    const { title, author, genre, location, contactInfo, ownerId, ownerName } =
+      body;
 
     // Validate required fields
     if (!title || !author || !location || !ownerId) {
@@ -89,8 +130,7 @@ export async function POST(request) {
     }
 
     // Verify that the owner exists and is an owner
-    const users = getUsers();
-    const owner = users.find((user) => user.id === ownerId);
+    const owner = await User.findById(ownerId);
 
     if (!owner) {
       return NextResponse.json({ message: "Owner not found" }, { status: 404 });
@@ -103,32 +143,26 @@ export async function POST(request) {
       );
     }
 
-    const books = getBooks();
-
     // Create new book
-    const newBook = {
-      id: Date.now().toString(),
+    const newBook = new Book({
       title,
       author,
       genre: genre || "Uncategorized",
       location,
       contactInfo: contactInfo || owner.mobile || owner.email,
-      ownerId,
-      status: "available", // available, rented, exchanged
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+      ownerId: new mongoose.Types.ObjectId(ownerId),
+      ownerName: ownerName || owner.name,
+      status: "available",
+    });
 
-    books.push(newBook);
-    saveBooks(books);
+    // Save to database
+    await newBook.save();
 
-    // Add owner info to response
-    const bookWithOwnerInfo = {
-      ...newBook,
-      ownerName: owner.name,
-    };
+    // Convert to plain object for response
+    const bookResponse = newBook.toObject();
+    bookResponse.id = bookResponse._id.toString();
 
-    return NextResponse.json(bookWithOwnerInfo, { status: 201 });
+    return NextResponse.json(bookResponse, { status: 201 });
   } catch (error) {
     console.error("Create book error:", error);
     return NextResponse.json(

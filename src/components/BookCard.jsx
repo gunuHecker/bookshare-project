@@ -11,12 +11,43 @@ export default function BookCard({
 }) {
   const [isSaved, setIsSaved] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState(null);
 
-  // Check if book is saved in localStorage
+  // Get user data on component mount
   useEffect(() => {
-    const savedBooks = JSON.parse(localStorage.getItem("savedBooks") || "[]");
-    setIsSaved(savedBooks.some((savedBook) => savedBook.id === book.id));
-  }, [book.id]);
+    try {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        setUser(JSON.parse(userData));
+      }
+    } catch (err) {
+      console.error("Error getting user data:", err);
+    }
+  }, []);
+
+  // Check if book is saved via API
+  useEffect(() => {
+    const checkIfBookIsSaved = async () => {
+      try {
+        if (!user || !book) return;
+
+        // Check saved books from API for this specific book
+        const response = await fetch(
+          `/api/books/saved?userId=${user.id}&bookId=${book.id}`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setIsSaved(data.isSaved);
+        }
+      } catch (err) {
+        console.error("Error checking if book is saved:", err);
+      }
+    };
+
+    checkIfBookIsSaved();
+  }, [book, user]);
 
   const statusColors = {
     available:
@@ -25,21 +56,56 @@ export default function BookCard({
     exchanged: "bg-blue-200 text-blue-800 border border-blue-400 shadow-sm",
   };
 
-  const handleSaveBook = () => {
-    const savedBooks = JSON.parse(localStorage.getItem("savedBooks") || "[]");
+  const handleSaveBook = async () => {
+    if (!user) {
+      alert("Please login to save books");
+      return;
+    }
 
-    if (isSaved) {
-      // Remove from saved
-      const updatedSavedBooks = savedBooks.filter(
-        (savedBook) => savedBook.id !== book.id
-      );
-      localStorage.setItem("savedBooks", JSON.stringify(updatedSavedBooks));
-      setIsSaved(false);
-    } else {
-      // Add to saved
-      savedBooks.push(book);
-      localStorage.setItem("savedBooks", JSON.stringify(savedBooks));
-      setIsSaved(true);
+    try {
+      setIsLoading(true);
+
+      if (isSaved) {
+        // Remove from saved
+        const response = await fetch(`/api/books/saved/${book.id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId: user.id }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.message || "Failed to remove book from saved");
+        }
+
+        setIsSaved(false);
+      } else {
+        // Add to saved
+        const response = await fetch(`/api/books/saved`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            bookId: book.id,
+          }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.message || "Failed to save book");
+        }
+
+        setIsSaved(true);
+      }
+    } catch (err) {
+      console.error("Error saving/unsaving book:", err);
+      alert(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -222,21 +288,28 @@ export default function BookCard({
                   </button>
                   <button
                     onClick={handleSaveBook}
+                    disabled={isLoading}
                     className={`w-12 flex items-center justify-center ${
                       isSaved
                         ? "bg-amber-500 text-white"
                         : "bg-gray-100 text-gray-600"
-                    } py-2 px-2 rounded-md hover:bg-amber-600 hover:text-white transition`}
+                    } py-2 px-2 rounded-md hover:bg-amber-600 hover:text-white transition ${
+                      isLoading ? "opacity-70 cursor-not-allowed" : ""
+                    }`}
                     title={isSaved ? "Remove from saved" : "Save book"}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
-                    </svg>
+                    {isLoading ? (
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
+                      </svg>
+                    )}
                   </button>
                 </div>
               )}

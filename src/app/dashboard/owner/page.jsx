@@ -69,6 +69,8 @@ export default function OwnerDashboard() {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
 
+      console.log(`Changing status of book ${id} to ${status}`);
+
       // Call the API to update the book status
       const response = await fetch(`/api/books/${id}/status`, {
         method: "PATCH",
@@ -81,9 +83,10 @@ export default function OwnerDashboard() {
         }),
       });
 
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to update book status");
+        throw new Error(responseData.message || "Failed to update book status");
       }
 
       // Update local state to reflect the status change

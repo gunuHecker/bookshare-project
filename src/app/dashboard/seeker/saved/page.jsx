@@ -7,40 +7,74 @@ export default function SavedBooks() {
   const [savedBooks, setSavedBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
 
+  // Get user from localStorage first
   useEffect(() => {
-    const fetchSavedBooks = () => {
-      try {
-        setIsLoading(true);
-
-        // Get saved books from localStorage
-        const savedBooksData = localStorage.getItem("savedBooks");
-
-        if (savedBooksData) {
-          setSavedBooks(JSON.parse(savedBooksData));
-        } else {
-          // Initialize empty array if no saved books
-          localStorage.setItem("savedBooks", JSON.stringify([]));
-          setSavedBooks([]);
-        }
-      } catch (err) {
-        console.error("Error fetching saved books:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to load saved books"
-        );
-      } finally {
+    try {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        setUser(JSON.parse(userData));
+      }
+    } catch (err) {
+      console.error("Error getting user data:", err);
+    } finally {
+      if (!localStorage.getItem("user")) {
         setIsLoading(false);
       }
-    };
-
-    fetchSavedBooks();
+    }
   }, []);
 
-  const handleRemoveFromSaved = (bookId) => {
+  // Only fetch saved books if we have a user
+  useEffect(() => {
+    if (user) {
+      fetchSavedBooks();
+    }
+  }, [user]);
+
+  const fetchSavedBooks = async () => {
     try {
-      const updatedSavedBooks = savedBooks.filter((book) => book.id !== bookId);
-      localStorage.setItem("savedBooks", JSON.stringify(updatedSavedBooks));
-      setSavedBooks(updatedSavedBooks);
+      setIsLoading(true);
+      setError("");
+
+      const response = await fetch(`/api/books/saved?userId=${user.id}`);
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to fetch saved books");
+      }
+
+      const data = await response.json();
+      setSavedBooks(data);
+    } catch (err) {
+      console.error("Error fetching saved books:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to load saved books"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoveFromSaved = async (bookId) => {
+    try {
+      setError("");
+
+      const response = await fetch(`/api/books/saved/${bookId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: user.id }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to remove book from saved");
+      }
+
+      // Update the UI by removing the book
+      setSavedBooks(savedBooks.filter((book) => book.id !== bookId));
     } catch (err) {
       console.error("Error removing book from saved:", err);
       setError(
@@ -53,6 +87,41 @@ export default function SavedBooks() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
+  // If no user is found, show login prompt
+  if (!user) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-8 text-center border border-gray-200">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
+          <svg
+            className="w-8 h-8 text-indigo-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
+          </svg>
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          Please login to see your saved books
+        </h3>
+        <p className="text-gray-600 mb-4">
+          You need to be logged in to access your saved books.
+        </p>
+        <a
+          href="/login"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition"
+        >
+          Login
+        </a>
       </div>
     );
   }

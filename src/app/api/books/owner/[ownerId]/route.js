@@ -1,39 +1,52 @@
 import { NextResponse } from "next/server";
-import { getBooks, getUsers } from "@/app/api/utils";
+import connectToDatabase from "@/dbConfig/dbConfig";
+import Book from "@/models/Book";
+import User from "@/models/User";
+import mongoose from "mongoose";
 
-// Get books by owner ID with simpler implementation
+// Get books by owner ID
 export async function GET(request, context) {
-  // Get the ownerId from context
-  const ownerId = context.params.ownerId;
-  console.log("Processing request for owner ID:", ownerId);
-
-  if (!ownerId) {
-    return NextResponse.json(
-      { message: "Owner ID is required" },
-      { status: 400 }
-    );
-  }
-
   try {
-    // Get books from data store
-    const books = getBooks();
+    // Connect to the database
+    await connectToDatabase();
 
-    // Find books for this owner
-    const ownerBooks = books.filter((book) => book.ownerId === ownerId);
+    // Get the ownerId from context
+    const ownerId = context.params.ownerId;
+    console.log("Processing request for owner ID:", ownerId);
 
-    // Get owner details
-    const users = getUsers();
-    const owner = users.find((user) => user.id === ownerId);
+    if (!ownerId) {
+      return NextResponse.json(
+        { message: "Owner ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if ownerId is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(ownerId)) {
+      return NextResponse.json(
+        { message: "Invalid owner ID format" },
+        { status: 400 }
+      );
+    }
+
+    // Find the owner in the database
+    const owner = await User.findById(ownerId).lean();
 
     if (!owner) {
       return NextResponse.json({ message: "Owner not found" }, { status: 404 });
     }
 
-    // Add owner details to books
-    const result = ownerBooks.map((book) => ({
+    // Find books for this owner
+    const books = await Book.find({
+      ownerId: new mongoose.Types.ObjectId(ownerId),
+    }).lean();
+
+    // Format the response with consistent ID field
+    const result = books.map((book) => ({
       ...book,
+      id: book._id.toString(),
       ownerName: owner.name,
-      contactInfo: owner.mobile || owner.email,
+      contactInfo: book.contactInfo || owner.mobile || owner.email,
     }));
 
     return NextResponse.json(result);

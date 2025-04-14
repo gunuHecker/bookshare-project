@@ -1,26 +1,37 @@
 import { NextResponse } from "next/server";
-import { getBooks, getUsers } from "@/app/api/utils";
+import connectToDatabase from "@/dbConfig/dbConfig";
+import Book from "@/models/Book";
+import User from "@/models/User";
 
 // Get public books (no authentication required)
 export async function GET() {
   try {
-    let books = getBooks();
+    // Connect to the database
+    await connectToDatabase();
 
-    // Only return available books for public view
-    books = books.filter((book) => book.status === "available");
+    // Get only available books for public view
+    const books = await Book.find({ status: "available" }).lean();
 
-    // Get all users to include owner details with books
-    const users = getUsers();
+    // Format response with consistent ID field and masked contact info
+    const publicBooks = await Promise.all(
+      books.map(async (book) => {
+        // Get the owner name if available
+        let ownerName = "Unknown";
+        if (book.ownerId) {
+          const owner = await User.findById(book.ownerId).lean();
+          if (owner) {
+            ownerName = owner.name;
+          }
+        }
 
-    // Map books with owner details, but mask contact info
-    const publicBooks = books.map((book) => {
-      const owner = users.find((user) => user.id === book.ownerId);
-      return {
-        ...book,
-        ownerName: owner ? owner.name : "Unknown",
-        contactInfo: "Login to view contact details",
-      };
-    });
+        return {
+          ...book,
+          id: book._id.toString(),
+          ownerName,
+          contactInfo: "Login to view contact details",
+        };
+      })
+    );
 
     return NextResponse.json(publicBooks, { status: 200 });
   } catch (error) {
